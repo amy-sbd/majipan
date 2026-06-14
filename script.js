@@ -1,6 +1,6 @@
 const app = document.getElementById("app");
 
-// 今日焼いたパン
+// 焼いたパンを保存
 let bakedBreads = [];
 
 const galLines = [
@@ -23,7 +23,7 @@ const customers = [
   "🐶 わんちゃん"
 ];
 
-const breads = [
+const normalBreads = [
   "🥖",
   "🍞",
   "🥐",
@@ -31,37 +31,42 @@ const breads = [
   "🥨"
 ];
 
+const rareBreads = [
+  "🌈🍞",
+  "👑🥯",
+  "💎🥐",
+  "✨🥖",
+  "🦄🥨"
+];
+
 function randomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
 function showTitle() {
-
-  const line = randomItem(galLines);
-
   app.innerHTML = `
-    <div class="title-box">
+<div class="title-box">
 
-      <div class="mini">
-        💖✨ WELCOME ✨💖
-      </div>
+  <div class="mini">
+    💖✨ WELCOME ✨💖
+  </div>
 
-      <h1>まぢパン。</h1>
+  <h1>まぢパン。</h1>
 
-      <p class="sub">
-        GAL BAKERY 💅🥐
-      </p>
+  <p class="sub">
+    GAL BAKERY 💅🥐
+  </p>
 
-      <div class="gal-talk">
-        「${line}」
-      </div>
+  <div class="gal-talk">
+    「${randomItem(galLines)}」
+  </div>
 
-      <button id="startButton">
-        🩷 START 🩷
-      </button>
+  <button id="startButton">
+    🩷 START 🩷
+  </button>
 
-    </div>
-  `;
+</div>
+`;
 
   document
     .getElementById("startButton")
@@ -69,7 +74,6 @@ function showTitle() {
 }
 
 async function showShop() {
-
   const response = await fetch("words.json");
   const words = await response.json();
 
@@ -88,53 +92,43 @@ async function showShop() {
   ].sort(() => Math.random() - 0.5);
 
   app.innerHTML = `
-    <div class="shop-card">
+<div class="shop-card">
 
-      <h1>🥐 まぢパン。</h1>
+  <h1>🥐 まぢパン。</h1>
 
-      <div class="gal-talk">
-        「${randomItem(galLines)}」
-      </div>
+  <div class="gal-talk">
+    「${randomItem(galLines)}」
+  </div>
 
-      <h3>💖 今日焼いたパン 💖</h3>
+  <h3>💖 今日焼いたパン 💖</h3>
 
-      <div
-        style="
-          font-size:40px;
-          min-height:60px;
-          margin-bottom:20px;
-        "
-      >
-        ${bakedBreads.join(" ")}
-      </div>
+  <div
+    style="
+      font-size:40px;
+      min-height:60px;
+      margin-bottom:20px;
+    "
+  >
+    ${bakedBreads.join(" ")}
+  </div>
 
-      <h2>
-        ${randomItem(customers)}
-      </h2>
+  <h2>${randomItem(customers)}</h2>
 
-      <p
-        style="
-          font-size:28px;
-          margin:25px 0;
-        "
-      >
-        <b>${word.english}</b>, please 💕
-      </p>
+  <p style="font-size:28px;">
+    <b>${word.english}</b>, please 💕
+  </p>
 
-      <div id="buttons"></div>
+  <div id="buttons"></div>
 
-    </div>
-  `;
+</div>
+`;
 
   const buttons = document.getElementById("buttons");
 
-  choices.forEach(choice => {
-
-    const button =
-      document.createElement("button");
+  choices.forEach((choice) => {
+    const button = document.createElement("button");
 
     button.textContent = choice;
-
     button.style.display = "block";
     button.style.margin = "12px auto";
     button.style.width = "240px";
@@ -143,20 +137,22 @@ async function showShop() {
 
       if (choice === word.japanese) {
 
-        const bread =
-          randomItem(breads);
+        const isRare = Math.random() < 0.08;
+        const bread = isRare
+          ? randomItem(rareBreads)
+          : randomItem(normalBreads);
 
         bakedBreads.push(bread);
 
-        alert(
-          `🎉 ${bread} 焼けた〜💖`
-        );
+        if (isRare) {
+          alert("🤯💖 レアパンGET!!\n\n" + bread + "\n\n激アツ〜🔥");
+        } else {
+          alert("🎉 " + bread + " が焼けた〜💖");
+        }
 
       } else {
 
-        alert(
-          `🤣 正解は「${word.japanese}」だよ💕`
-        );
+        alert("🤣 正解は「" + word.japanese + "」だよ💕");
 
       }
 
@@ -165,9 +161,7 @@ async function showShop() {
     };
 
     buttons.appendChild(button);
-
   });
-
 }
 
 showTitle();
