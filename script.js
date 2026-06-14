@@ -1,54 +1,62 @@
 const app = document.getElementById("app");
 
-const galMessages = [
+const galLines = [
   "え、今日も来たじゃ〜ん🤣💕",
-  "ビジュ良すぎ案件🫶✨",
-  "まぢ今日も盛ってこ💖",
-  "ガチえらいんだけど🥹💕",
-  "その調子で優勝しよ〜🤣",
-  "1問だけでも勝ち✌️✨",
-  "うちら今日も最強じゃん💅",
-  "まぢテンアゲなんだけど💕",
-  "来てくれてあざます🫶",
-  "ノリでいこノリで🤣"
+  "ガチ助かるんだけど〜🩷",
+  "今日ビジュ良くない？✨",
+  "パン焼いてこ〜🥐💅",
+  "優勝すぎる😂💕",
+  "まぢ神〜！！✨",
+  "それ盛れてる〜🤣🩷"
 ];
 
 const customers = [
-  "🐰 ぴょんみ",
-  "🐱 にゃみ",
-  "🐻 くまち",
-  "🦊 きつねぴ",
-  "🐼 ぱんだち"
+  "🐰 うさぎちゃん",
+  "🐻 くまちゃん",
+  "🐱 ねこちゃん",
+  "🦊 きつねちゃん",
+  "🐼 パンダちゃん",
+  "🐹 ハムちゃん",
+  "🐶 わんちゃん"
 ];
 
-const goodMessages = [
-  "え、天才🤣💕",
-  "優勝〜〜〜💖",
-  "ガチで才能ある🫶",
-  "その調子すぎる🤣",
-  "盛れてる盛れてる✨",
-  "つよ🤣💕",
-  "センスしかない💅",
-  "最高なんだけど🥹",
-  "神です👏💕",
-  "まぢナイス〜🩷"
-];
+function randomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
 
-const badMessages = [
-  "焦げたww🤣🍞",
-  "逆におもろい🤣💕",
-  "ドンマイすぎる😂",
-  "ま、次いこ🫶",
-  "惜し〜〜🤣",
-  "ノーカンノーカン💖",
-  "気にしな〜い✨",
-  "あるある🤣",
-  "まだ始まったばっか💕",
-  "つぎ勝てばOK✌️"
-];
+function showTitle() {
 
-let berry = 0;
-let bakedBreads = [];
+  const line = randomItem(galLines);
+
+  app.innerHTML = `
+    <div class="title-box">
+
+      <div class="mini">
+        💖✨ WELCOME ✨💖
+      </div>
+
+      <h1>まぢパン。</h1>
+
+      <p class="sub">
+        GAL BAKERY 💅🥐
+      </p>
+
+      <div class="gal-talk">
+        「${line}」
+      </div>
+
+      <button id="startButton">
+        🩷 START 🩷
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById("startButton")
+    .addEventListener("click", showShop);
+
+}
 
 async function showShop() {
 
@@ -69,71 +77,22 @@ async function showShop() {
     wrongWords[2].japanese
   ].sort(() => Math.random() - 0.5);
 
-  const gal =
-    galMessages[
-      Math.floor(Math.random() * galMessages.length)
-    ];
-
-  const customer =
-    customers[
-      Math.floor(Math.random() * customers.length)
-    ];
-
   app.innerHTML = `
-    <div class="title-box">
+    <div class="shop-card">
 
-      <div class="mini">
-        🍓 Berry ${berry}
-      </div>
-
-      <h1>まぢパン。</h1>
-
-      <p class="sub">
-        GAL BAKERY 💅🥐
-      </p>
+      <h1>🥐 まぢパン。</h1>
 
       <div class="gal-talk">
-        ${gal}
+        「${randomItem(galLines)}」
       </div>
 
-      <div
-        style="
-          font-size:28px;
-          margin-top:20px;
-          margin-bottom:10px;
-        "
-      >
-        ${customer}
-      </div>
+      <h2>
+        ${randomItem(customers)}
+      </h2>
 
-      <div
-        style="
-          font-size:26px;
-          font-weight:bold;
-          margin-bottom:24px;
-        "
-      >
-        "${word.english}, please!"
-      </div>
-
-      <div
-        style="
-          font-size:14px;
-          margin-bottom:10px;
-        "
-      >
-        🥐 Collection
-      </div>
-
-      <div
-        style="
-          min-height:40px;
-          font-size:30px;
-          margin-bottom:24px;
-        "
-      >
-        ${bakedBreads.join(" ")}
-      </div>
+      <p style="font-size:28px;margin:25px 0;">
+        <b>${word.english}</b>, please 💕
+      </p>
 
       <div id="buttons"></div>
 
@@ -147,45 +106,19 @@ async function showShop() {
     const button = document.createElement("button");
 
     button.textContent = choice;
-
-    button.style.marginBottom = "12px";
+    button.style.display = "block";
+    button.style.margin = "12px auto";
+    button.style.width = "240px";
 
     button.onclick = () => {
 
       if (choice === word.japanese) {
 
-        berry += 10;
-
-        const breads = [
-          "🥐",
-          "🥖",
-          "🍞",
-          "🥯",
-          "🥨"
-        ];
-
-        const bread =
-          breads[
-            Math.floor(Math.random() * breads.length)
-          ];
-
-        bakedBreads.push(bread);
-
-        const msg =
-          goodMessages[
-            Math.floor(Math.random() * goodMessages.length)
-          ];
-
-        alert(`💖 ${msg}\n\n+10 Berry\n${bread} GET✨`);
+        alert("🎉 きゃーー💕 正解なんだけど〜✨");
 
       } else {
 
-        const msg =
-          badMessages[
-            Math.floor(Math.random() * badMessages.length)
-          ];
-
-        alert(`${msg}\n\n正解：${word.japanese}`);
+        alert(`🤣 ちょ待って〜！正解は「${word.japanese}」だよ💦`);
 
       }
 
@@ -199,6 +132,4 @@ async function showShop() {
 
 }
 
-document
-  .getElementById("startButton")
-  .addEventListener("click", showShop);
+showTitle();

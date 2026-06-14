@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "english": "apple",
+    "japanese": "りんご"
+  },
+  {
+    "id": 2,
+    "english": "bread",
+    "japanese": "パン"
+  },
+  {
+    "id": 3,
+    "english": "book",
+    "japanese": "本"
+  },
+  {
+    "id": 4,
+    "english": "cat",
+    "japanese": "ねこ"
+  },
+  {
+    "id": 5,
+    "english": "dog",
+    "japanese": "いぬ"
+  },
+  {
+    "id": 6,
+    "english": "milk",
+    "japanese": "牛乳"
+  }
+]
