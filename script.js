@@ -2,7 +2,6 @@ const app = document.getElementById("app");
 
 const SAVE_KEY = "majipan_save_v1";
 
-// セーブデータ
 let bakedBreads = [];
 let berry = 0;
 
@@ -207,26 +206,62 @@ async function showShop() {
 
         if (isRare) {
           berry += 50;
-          alert("🤯💖 レアパンGET!!\n\n" + bread + "\n\n🍓 +50 Berry");
+          saveGame();
+          showResult(
+            "🤯 レアパンGET!!",
+            bread,
+            "🍓 +50 Berry<br>激アツ〜🔥"
+          );
         } else {
           berry += 10;
-          alert("🎉 " + bread + " が焼けた〜💖\n\n🍓 +10 Berry");
+          saveGame();
+          showResult(
+            "🎉 正解〜💖",
+            bread,
+            "🍓 +10 Berry"
+          );
         }
-
-        saveGame();
 
       } else {
 
-        alert("🤣 正解は「" + word.japanese + "」だよ💕");
+        showResult(
+          "🤣 惜しい〜",
+          "🍞",
+          "正解は「" + word.japanese + "」だよ💕"
+        );
 
       }
-
-      showShop();
 
     };
 
     buttons.appendChild(button);
   });
+}
+
+function showResult(title, bread, message) {
+  app.innerHTML = `
+<div class="shop-card">
+
+  <h1>${title}</h1>
+
+  <div style="font-size:64px;margin:24px 0;">
+    ${bread}
+  </div>
+
+  <div class="gal-talk">
+    ${message}
+  </div>
+
+  <button id="nextButton">
+    🩷 NEXT 🩷
+  </button>
+
+</div>
+`;
+
+  document
+    .getElementById("nextButton")
+    .addEventListener("click", showShop);
 }
 
 loadGame();
