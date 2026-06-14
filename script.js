@@ -1,9 +1,9 @@
 const app = document.getElementById("app");
 
-// 焼いたパンを保存
-let bakedBreads = [];
+const SAVE_KEY = "majipan_save_v1";
 
-// Berry
+// セーブデータ
+let bakedBreads = [];
 let berry = 0;
 
 const galLines = [
@@ -46,6 +46,48 @@ function randomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
+function loadGame() {
+  const saved = localStorage.getItem(SAVE_KEY);
+
+  if (!saved) {
+    return;
+  }
+
+  try {
+    const data = JSON.parse(saved);
+
+    bakedBreads = data.bakedBreads || [];
+    berry = data.berry || 0;
+
+  } catch (error) {
+    bakedBreads = [];
+    berry = 0;
+  }
+}
+
+function saveGame() {
+  const data = {
+    bakedBreads,
+    berry
+  };
+
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+}
+
+function resetGame() {
+  const ok = confirm("データをリセットする？");
+
+  if (!ok) {
+    return;
+  }
+
+  bakedBreads = [];
+  berry = 0;
+  localStorage.removeItem(SAVE_KEY);
+
+  showTitle();
+}
+
 function showTitle() {
   app.innerHTML = `
 <div class="title-box">
@@ -64,8 +106,16 @@ function showTitle() {
     「${randomItem(galLines)}」
   </div>
 
+  <div class="mini">
+    🍓 Berry：${berry}
+  </div>
+
   <button id="startButton">
     🩷 START 🩷
+  </button>
+
+  <button id="resetButton" style="margin-top:12px;background:#999;">
+    データリセット
   </button>
 
 </div>
@@ -74,6 +124,10 @@ function showTitle() {
   document
     .getElementById("startButton")
     .addEventListener("click", showShop);
+
+  document
+    .getElementById("resetButton")
+    .addEventListener("click", resetGame);
 }
 
 async function showShop() {
@@ -159,6 +213,8 @@ async function showShop() {
           alert("🎉 " + bread + " が焼けた〜💖\n\n🍓 +10 Berry");
         }
 
+        saveGame();
+
       } else {
 
         alert("🤣 正解は「" + word.japanese + "」だよ💕");
@@ -173,4 +229,5 @@ async function showShop() {
   });
 }
 
+loadGame();
 showTitle();
