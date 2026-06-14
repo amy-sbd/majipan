@@ -1,6 +1,6 @@
 const app = document.getElementById("app");
 
-const SAVE_KEY = "majipan_save_v2";
+const SAVE_KEY = "majipan_save_v5";
 
 let berry = 0;
 let todayCorrect = 0;
@@ -8,10 +8,12 @@ let galExp = 0;
 let galLevel = 1;
 let combo = 0;
 
-let missionClaimed = {
-  correct3: false,
-  combo5: false
-};
+let currentQuestion = 0;
+let setCorrect = 0;
+let setBerry = 0;
+
+let wordStats = {};
+let trainingMode = false;
 
 const galLines = [
   "え、今日も来たじゃ〜ん🤣💕",
@@ -20,44 +22,18 @@ const galLines = [
   "優勝すぎる😂💕",
   "まぢ神〜！！✨",
   "それ盛れてる〜🤣🩷",
-  "そのノリ、まぢ強い💅",
   "一問だけでも勝ちなんよ✨"
 ];
 
-const correctLines = [
-  "え、天才なんだけど🤣💕",
-  "それ正解〜💅✨",
-  "うますぎ案件💖",
-  "ガチで優勝🫶",
-  "センスありすぎ🤣",
-  "まぢ強いじゃん✨"
-];
-
-const missLines = [
-  "焦げたww🤣",
-  "惜しすぎる〜😂💕",
-  "ま、次いこ🫶",
-  "逆におもろい🤣",
-  "ノーカンノーカン💖",
-  "次で盛り返そ💕"
-];
-
-const customers = [
-  "🐰 うさぎちゃん",
-  "🐻 くまちゃん",
-  "🐱 ねこちゃん",
-  "🦊 きつねちゃん",
-  "🐼 パンダちゃん",
-  "🐹 ハムちゃん",
-  "🐶 わんちゃん"
+const bossLines = [
+  "ここから本番なんだけど🔥",
+  "スペル書けたらガチ強い💅",
+  "FINALいくよ、集中〜👑",
+  "ここ決めたらまぢ優勝✨"
 ];
 
 function randomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
-}
-
-function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function addGalExp(amount) {
@@ -68,10 +44,46 @@ function addGalExp(amount) {
   if (galExp >= needed) {
     galExp -= needed;
     galLevel++;
-    return true;
+  }
+}
+
+function getWordStat(word) {
+  if (!wordStats[word.id]) {
+    wordStats[word.id] = {
+      stage: 1,
+      mistakes: 0,
+      correctStreak: 0,
+      bossClear: 0,
+      graduated: false
+    };
   }
 
-  return false;
+  return wordStats[word.id];
+}
+
+function chooseWord(words) {
+  const weighted = [];
+
+  words.forEach((word) => {
+    const stat = getWordStat(word);
+    let weight = 1;
+
+    weight += stat.mistakes * 3;
+
+    if (stat.stage === 3) {
+      weight += 2;
+    }
+
+    if (stat.graduated) {
+      weight = 1;
+    }
+
+    for (let i = 0; i < weight; i++) {
+      weighted.push(word);
+    }
+  });
+
+  return randomItem(weighted);
 }
 
 function loadGame() {
@@ -83,24 +95,14 @@ function loadGame() {
     const data = JSON.parse(saved);
 
     berry = data.berry || 0;
+    todayCorrect = data.todayCorrect || 0;
     galExp = data.galExp || 0;
     galLevel = data.galLevel || 1;
     combo = data.combo || 0;
-
-    if (data.todayKey === getTodayKey()) {
-      todayCorrect = data.todayCorrect || 0;
-      missionClaimed = data.missionClaimed || {
-        correct3: false,
-        combo5: false
-      };
-    }
+    wordStats = data.wordStats || {};
 
   } catch {
-    berry = 0;
-    todayCorrect = 0;
-    galExp = 0;
-    galLevel = 1;
-    combo = 0;
+    console.log("save load error");
   }
 }
 
@@ -110,41 +112,21 @@ function saveGame() {
     JSON.stringify({
       berry,
       todayCorrect,
-      missionClaimed,
       galExp,
       galLevel,
       combo,
-      todayKey: getTodayKey()
+      wordStats
     })
   );
-}
-
-function resetGame() {
-  const ok = confirm("データをリセットする？");
-
-  if (!ok) return;
-
-  berry = 0;
-  todayCorrect = 0;
-  galExp = 0;
-  galLevel = 1;
-  combo = 0;
-
-  missionClaimed = {
-    correct3: false,
-    combo5: false
-  };
-
-  localStorage.removeItem(SAVE_KEY);
-  showTitle();
 }
 
 function showStatusMini() {
   return `
 <div class="mini">
-  🍓 Berry：${berry}<br>
-  💅 ギャル力 Lv.${galLevel} / EXP ${galExp}/${galLevel * 100}<br>
-  🔥 Combo：${combo}
+🍓 Berry：${berry}<br>
+💅 ギャル力 Lv.${galLevel}<br>
+EXP：${galExp}/${galLevel * 100}<br>
+🔥 Combo：${combo}
 </div>
 `;
 }
@@ -153,207 +135,397 @@ function showTitle() {
   app.innerHTML = `
 <div class="title-box">
 
-  <div class="mini">💖✨ WELCOME ✨💖</div>
+<h1>まぢパン。</h1>
 
-  <h1>まぢパン。</h1>
+<p class="sub">GAL WORD BATTLE 💅✨</p>
 
-  <p class="sub">GAL BAKERY 💅🥐</p>
+<div class="gal-talk">
+「${randomItem(galLines)}」
+</div>
 
-  <div class="gal-talk">
-    「${randomItem(galLines)}」
-  </div>
+${showStatusMini()}
 
-  ${showStatusMini()}
+<button id="startButton">🩷 START</button>
 
-  <button id="startButton">🩷 START 🩷</button>
+<button id="trainingButton" style="margin-top:12px;background:#ff4d6d;">
+🔥 苦手特訓
+</button>
 
-  <button id="missionButton" style="margin-top:12px;background:#ff9f43;">
-    🔥 ミッション
-  </button>
+<button id="statusButton" style="margin-top:12px;background:#8f5cff;">
+📊 単語ステータス
+</button>
 
-  <button id="resetButton" style="margin-top:12px;background:#999;">
-    データリセット
-  </button>
+<button id="graduateButton" style="margin-top:12px;background:#d4af37;">
+👑 卒業図鑑
+</button>
 
 </div>
 `;
 
-  document.getElementById("startButton").onclick = showShop;
-  document.getElementById("missionButton").onclick = showMissions;
-  document.getElementById("resetButton").onclick = resetGame;
+  document.getElementById("startButton").onclick = () => {
+    trainingMode = false;
+    currentQuestion = 0;
+    setCorrect = 0;
+    setBerry = 0;
+    showShop();
+  };
+
+  document.getElementById("trainingButton").onclick = () => {
+    trainingMode = true;
+    currentQuestion = 0;
+    setCorrect = 0;
+    setBerry = 0;
+    showShop();
+  };
+
+  document.getElementById("statusButton").onclick = showWordStatus;
+  document.getElementById("graduateButton").onclick = showGraduationBook;
 }
 
-function showMissions() {
+async function showWordStatus() {
+  const response = await fetch("words.json");
+  const words = await response.json();
+
+  let html = "";
+
+  words.forEach((word) => {
+    const stat = getWordStat(word);
+
+    html += `
+<div style="margin:15px 0;padding:10px;border:1px solid #ddd;border-radius:12px;">
+<b>${word.english}</b> / ${word.japanese}<br>
+Stage：${stat.stage}<br>
+苦手度：${stat.mistakes}<br>
+連続正解：${stat.correctStreak}<br>
+ボスクリア：${stat.bossClear}<br>
+卒業：${stat.graduated ? "👑 済み" : "-"}
+</div>
+`;
+  });
+
   app.innerHTML = `
 <div class="shop-card">
 
-  <h1>🔥 ミッション</h1>
+<h1>📊 単語ステータス</h1>
 
-  ${showStatusMini()}
+${html}
 
-  <div class="gal-talk">
-    今日も盛ってこ〜💖
-  </div>
-
-  <p>今日3問正解：${todayCorrect}/3</p>
-  <button id="missionCorrect3">
-    ${missionClaimed.correct3 ? "受け取り済み" : "報酬を受け取る 🍓 +50"}
-  </button>
-
-  <p style="margin-top:24px;">5コンボ達成：${combo}/5</p>
-  <button id="missionCombo5">
-    ${missionClaimed.combo5 ? "受け取り済み" : "報酬を受け取る 🍓 +100"}
-  </button>
-
-  <button id="homeButton" style="margin-top:24px;background:#999;">
-    HOME
-  </button>
+<button id="homeButton">HOME</button>
 
 </div>
 `;
-
-  document.getElementById("missionCorrect3").onclick = () => {
-    if (todayCorrect >= 3 && !missionClaimed.correct3) {
-      berry += 50;
-      const leveled = addGalExp(30);
-      missionClaimed.correct3 = true;
-      saveGame();
-
-      showResult(
-        leveled ? "💅 レベルアップ!!" : "🔥 ミッション達成",
-        "今日3問クリア💖<br>🍓 +50 Berry / EXP +30"
-      );
-    }
-  };
-
-  document.getElementById("missionCombo5").onclick = () => {
-    if (combo >= 5 && !missionClaimed.combo5) {
-      berry += 100;
-      const leveled = addGalExp(50);
-      missionClaimed.combo5 = true;
-      saveGame();
-
-      showResult(
-        leveled ? "💅 レベルアップ!!" : "🔥 コンボミッション達成",
-        "5コンボ達成💖<br>🍓 +100 Berry / EXP +50"
-      );
-    }
-  };
 
   document.getElementById("homeButton").onclick = showTitle;
 }
 
-async function showShop() {
+async function showGraduationBook() {
   const response = await fetch("words.json");
   const words = await response.json();
 
-  const word = randomItem(words);
+  const graduatedWords = words.filter((word) => {
+    const stat = getWordStat(word);
+    return stat.graduated;
+  });
+
+  let html = "";
+
+  if (graduatedWords.length === 0) {
+    html = `
+<div class="gal-talk">
+まだ卒業単語はないよ💅<br>
+ボス戦クリアでここに並ぶ✨
+</div>
+`;
+  } else {
+    graduatedWords.forEach((word) => {
+      const stat = getWordStat(word);
+
+      html += `
+<div style="margin:15px 0;padding:12px;border:2px solid gold;border-radius:14px;background:#fffbea;">
+👑 <b>${word.english}</b> / ${word.japanese}<br>
+ボスクリア：${stat.bossClear}回<br>
+まぢ習得済み💖
+</div>
+`;
+    });
+  }
+
+  app.innerHTML = `
+<div class="shop-card">
+
+<h1>👑 卒業図鑑</h1>
+
+<div class="mini">
+卒業単語：${graduatedWords.length}
+</div>
+
+${html}
+
+<button id="homeButton">HOME</button>
+
+</div>
+`;
+
+  document.getElementById("homeButton").onclick = showTitle;
+}
+
+function makeQuestion(words, word, stat) {
+  let questionText = "";
+  let correctAnswer = "";
+  let choices = [];
 
   const wrongWords = words
     .filter(w => w.id !== word.id)
     .sort(() => Math.random() - 0.5);
 
-  const choices = [
-    word.japanese,
-    wrongWords[0].japanese,
-    wrongWords[1].japanese,
-    wrongWords[2].japanese
-  ].sort(() => Math.random() - 0.5);
+  if (stat.stage === 1) {
+    questionText = `<b>${word.english}</b><br>この意味は？`;
+    correctAnswer = word.japanese;
 
-  app.innerHTML = `
+    choices = [
+      word.japanese,
+      wrongWords[0].japanese,
+      wrongWords[1].japanese,
+      wrongWords[2].japanese
+    ];
+  }
+
+  if (stat.stage === 2) {
+    questionText = `<b>${word.japanese}</b><br>英語で？`;
+    correctAnswer = word.english;
+
+    choices = [
+      word.english,
+      wrongWords[0].english,
+      wrongWords[1].english,
+      wrongWords[2].english
+    ];
+  }
+
+  if (stat.stage === 3) {
+    questionText = `<b>${word.japanese}</b><br>スペル入力💖`;
+    correctAnswer = word.english;
+  }
+
+  return {
+    questionText,
+    correctAnswer,
+    choices: choices.sort(() => Math.random() - 0.5)
+  };
+}
+
+async function showShop() {
+  if (currentQuestion >= 10) {
+    showSetResult();
+    return;
+  }
+
+  currentQuestion++;
+
+  const response = await fetch("words.json");
+  const words = await response.json();
+
+  let playWords = words;
+
+  if (trainingMode) {
+    playWords = words.filter((word) => {
+      const stat = getWordStat(word);
+      return stat.mistakes >= 1;
+    });
+
+    if (playWords.length === 0) {
+      app.innerHTML = `
 <div class="shop-card">
 
-  <h1>💅 まぢパン。</h1>
+<h1>🔥 苦手特訓</h1>
 
-  ${showStatusMini()}
+<div class="gal-talk">
+今は苦手単語ないじゃ〜ん💖<br>
+まぢ優秀✨
+</div>
 
-  <div class="gal-talk">
-    「${randomItem(galLines)}」
-  </div>
-
-  <h2>${randomItem(customers)}</h2>
-
-  <p style="font-size:28px;">
-    <b>${word.english}</b>, please 💕
-  </p>
-
-  <div id="buttons"></div>
+<button id="homeButton">HOME</button>
 
 </div>
 `;
 
-  const buttons = document.getElementById("buttons");
+      document.getElementById("homeButton").onclick = showTitle;
+      return;
+    }
+  }
 
-  choices.forEach((choice) => {
-    const button = document.createElement("button");
+  const word = chooseWord(playWords);
+  const stat = getWordStat(word);
+  const question = makeQuestion(playWords, word, stat);
 
-    button.textContent = choice;
-    button.style.display = "block";
-    button.style.margin = "12px auto";
-    button.style.width = "240px";
+  const isBoss = stat.stage === 3;
 
-    button.onclick = () => {
-      if (choice === word.japanese) {
-        todayCorrect++;
-        combo++;
+  app.innerHTML = `
+<div class="shop-card" style="${
+  isBoss
+    ? "background:linear-gradient(180deg,#2b1055,#7597de);color:white;border:3px solid gold;"
+    : ""
+}">
 
-        let comboBonus = 0;
+<h1>${trainingMode ? "🔥 WEAK WORD TRAINING" : isBoss ? "👑 FINAL SPELL BATTLE" : "💅 まぢパン。"}</h1>
 
-        if (combo > 0 && combo % 3 === 0) {
-          comboBonus = 20;
-        }
+<div class="mini">
+問題 ${currentQuestion}/10<br>
+Stage：${stat.stage}<br>
+苦手度：${stat.mistakes}<br>
+卒業：${stat.graduated ? "👑" : "-"}
+</div>
 
-        berry += 10 + comboBonus;
+${showStatusMini()}
 
-        const leveled = addGalExp(10);
+<div class="gal-talk">
+「${isBoss ? randomItem(bossLines) : randomItem(galLines)}」
+</div>
 
-        saveGame();
+<p style="font-size:30px;">
+${question.questionText}
+</p>
 
-        showResult(
-          leveled ? "💅 レベルアップ!!" : "🎉 正解〜💖",
-          randomItem(correctLines) +
-          "<br>🍓 +10 Berry / EXP +10" +
-          (comboBonus > 0 ? "<br>🔥 Combo Bonus +20 Berry" : "")
-        );
+<div id="answerArea"></div>
 
+</div>
+`;
+
+  const answerArea = document.getElementById("answerArea");
+
+  if (stat.stage === 3) {
+    answerArea.innerHTML = `
+<input id="spellInput" type="text" style="font-size:24px;padding:12px;border-radius:14px;text-align:center;">
+<button id="spellButton">CHECK</button>
+`;
+
+    document.getElementById("spellButton").onclick = () => {
+      const value =
+        document.getElementById("spellInput").value.trim().toLowerCase();
+
+      if (value === question.correctAnswer.toLowerCase()) {
+        handleCorrect(stat, true);
       } else {
-        combo = 0;
-        saveGame();
-
-        showResult(
-          "🤣 惜しい〜",
-          randomItem(missLines) +
-          "<br>正解は「" + word.japanese + "」だよ💕<br>Comboはリセット！"
-        );
+        handleMiss(stat, question.correctAnswer);
       }
     };
 
-    buttons.appendChild(button);
-  });
+  } else {
+    question.choices.forEach((choice) => {
+      const button = document.createElement("button");
+      button.textContent = choice;
+
+      button.onclick = () => {
+        if (choice === question.correctAnswer) {
+          handleCorrect(stat, false);
+        } else {
+          handleMiss(stat, question.correctAnswer);
+        }
+      };
+
+      answerArea.appendChild(button);
+    });
+  }
+}
+
+function handleCorrect(stat, isBoss) {
+  todayCorrect++;
+  combo++;
+  setCorrect++;
+
+  stat.correctStreak++;
+
+  if (!isBoss && stat.correctStreak >= 3 && stat.stage < 3) {
+    stat.stage++;
+    stat.correctStreak = 0;
+  }
+
+  if (isBoss) {
+    stat.bossClear++;
+    stat.graduated = true;
+    stat.mistakes = 0;
+    stat.correctStreak = 0;
+  }
+
+  const gain = isBoss ? 30 : 10;
+
+  berry += gain;
+  setBerry += gain;
+
+  addGalExp(gain);
+
+  saveGame();
+
+  showResult(
+    isBoss ? "👑 卒業クリア!!" : "🎉 正解",
+    isBoss ? "この単語まぢ習得💖" : "ナイス💖"
+  );
+}
+
+function handleMiss(stat, correctAnswer) {
+  combo = 0;
+  stat.mistakes++;
+  stat.correctStreak = 0;
+
+  if (stat.stage === 3) {
+    stat.stage = 2;
+    stat.graduated = false;
+  }
+
+  saveGame();
+
+  showResult(
+    "🤣 惜しい〜",
+    "正解：" + correctAnswer
+  );
 }
 
 function showResult(title, message) {
   app.innerHTML = `
 <div class="shop-card">
 
-  <h1>${title}</h1>
+<h1>${title}</h1>
 
-  ${showStatusMini()}
+${showStatusMini()}
 
-  <div class="gal-talk">
-    ${message}
-  </div>
+<div class="gal-talk">
+${message}
+</div>
 
-  <button id="nextButton">🩷 NEXT 🩷</button>
-
-  <button id="homeButton" style="margin-top:12px;background:#999;">
-    HOME
-  </button>
+<button id="nextButton">NEXT</button>
+<button id="homeButton" style="margin-top:12px;background:#999;">HOME</button>
 
 </div>
 `;
 
   document.getElementById("nextButton").onclick = showShop;
+  document.getElementById("homeButton").onclick = showTitle;
+}
+
+function showSetResult() {
+  app.innerHTML = `
+<div class="shop-card">
+
+<h1>📊 セット結果</h1>
+
+<div class="gal-talk">
+正解 ${setCorrect}/10<br>
+🍓 ${setBerry}
+</div>
+
+<button id="nextSetButton">NEXT SET</button>
+<button id="homeButton">HOME</button>
+
+</div>
+`;
+
+  document.getElementById("nextSetButton").onclick = () => {
+    currentQuestion = 0;
+    setCorrect = 0;
+    setBerry = 0;
+    showShop();
+  };
+
   document.getElementById("homeButton").onclick = showTitle;
 }
 
