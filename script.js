@@ -25,30 +25,9 @@ const customers = [
   "🐶 わんちゃん"
 ];
 
-const normalBreads = [
-  "🥖",
-  "🍞",
-  "🥐",
-  "🥯",
-  "🥨"
-];
-
-const rareBreads = [
-  "🌈🍞",
-  "👑🥯",
-  "💎🥐",
-  "✨🥖",
-  "🦄🥨"
-];
-
-const gachaBreads = [
-  "🍓🥐",
-  "🍫🍞",
-  "🎀🥯",
-  "🌈🥨",
-  "💎🍩",
-  "👑🥐"
-];
+const normalBreads = ["🥖","🍞","🥐","🥯","🥨"];
+const rareBreads = ["🌈🍞","👑🥯","💎🥐","✨🥖","🦄🥨"];
+const gachaBreads = ["🍓🥐","🍫🍞","🎀🥯","🌈🥨","💎🍩","👑🥐"];
 
 function randomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -57,37 +36,32 @@ function randomItem(array) {
 function loadGame() {
   const saved = localStorage.getItem(SAVE_KEY);
 
-  if (!saved) {
-    return;
-  }
+  if (!saved) return;
 
   try {
     const data = JSON.parse(saved);
-
     bakedBreads = data.bakedBreads || [];
     berry = data.berry || 0;
-
-  } catch (error) {
+  } catch {
     bakedBreads = [];
     berry = 0;
   }
 }
 
 function saveGame() {
-  const data = {
-    bakedBreads,
-    berry
-  };
-
-  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  localStorage.setItem(
+    SAVE_KEY,
+    JSON.stringify({
+      bakedBreads,
+      berry
+    })
+  );
 }
 
 function resetGame() {
   const ok = confirm("データをリセットする？");
 
-  if (!ok) {
-    return;
-  }
+  if (!ok) return;
 
   bakedBreads = [];
   berry = 0;
@@ -96,13 +70,46 @@ function resetGame() {
   showTitle();
 }
 
+function showCollection() {
+  const uniqueBreads = [...new Set(bakedBreads)];
+
+  app.innerHTML = `
+<div class="shop-card">
+
+  <h1>📚 パン図鑑</h1>
+
+  <div class="mini">
+    集めた数：${uniqueBreads.length}
+  </div>
+
+  <div
+    style="
+      font-size:48px;
+      min-height:100px;
+      margin:20px 0;
+      line-height:1.8;
+    "
+  >
+    ${uniqueBreads.join(" ")}
+  </div>
+
+  <button id="homeButton">
+    HOME
+  </button>
+
+</div>
+`;
+
+  document
+    .getElementById("homeButton")
+    .addEventListener("click", showTitle);
+}
+
 function showTitle() {
   app.innerHTML = `
 <div class="title-box">
 
-  <div class="mini">
-    💖✨ WELCOME ✨💖
-  </div>
+  <div class="mini">💖✨ WELCOME ✨💖</div>
 
   <h1>まぢパン。</h1>
 
@@ -126,6 +133,10 @@ function showTitle() {
     🎁 ガチャ 30 Berry
   </button>
 
+  <button id="collectionButton" style="margin-top:12px;background:#ff9f43;">
+    📚 パン図鑑
+  </button>
+
   <button id="resetButton" style="margin-top:12px;background:#999;">
     データリセット
   </button>
@@ -133,16 +144,16 @@ function showTitle() {
 </div>
 `;
 
-  document
-    .getElementById("startButton")
+  document.getElementById("startButton")
     .addEventListener("click", showShop);
 
-  document
-    .getElementById("gachaButton")
+  document.getElementById("gachaButton")
     .addEventListener("click", playGacha);
 
-  document
-    .getElementById("resetButton")
+  document.getElementById("collectionButton")
+    .addEventListener("click", showCollection);
+
+  document.getElementById("resetButton")
     .addEventListener("click", resetGame);
 }
 
@@ -150,8 +161,7 @@ async function showShop() {
   const response = await fetch("words.json");
   const words = await response.json();
 
-  const word =
-    words[Math.floor(Math.random() * words.length)];
+  const word = randomItem(words);
 
   const wrongWords = words
     .filter(w => w.id !== word.id)
@@ -169,9 +179,7 @@ async function showShop() {
 
   <h1>🥐 まぢパン。</h1>
 
-  <div class="mini">
-    🍓 Berry：${berry}
-  </div>
+  <div class="mini">🍓 Berry：${berry}</div>
 
   <div class="gal-talk">
     「${randomItem(galLines)}」
@@ -179,13 +187,7 @@ async function showShop() {
 
   <h3>💖 今日焼いたパン 💖</h3>
 
-  <div
-    style="
-      font-size:40px;
-      min-height:60px;
-      margin-bottom:20px;
-    "
-  >
+  <div style="font-size:40px;min-height:60px;margin-bottom:20px;">
     ${bakedBreads.join(" ")}
   </div>
 
@@ -211,9 +213,7 @@ async function showShop() {
     button.style.width = "240px";
 
     button.onclick = () => {
-
       if (choice === word.japanese) {
-
         const isRare = Math.random() < 0.08;
         const bread = isRare
           ? randomItem(rareBreads)
@@ -224,31 +224,19 @@ async function showShop() {
         if (isRare) {
           berry += 50;
           saveGame();
-          showResult(
-            "🤯 レアパンGET!!",
-            bread,
-            "🍓 +50 Berry<br>激アツ〜🔥"
-          );
+          showResult("🤯 レアパンGET!!", bread, "🍓 +50 Berry");
         } else {
           berry += 10;
           saveGame();
-          showResult(
-            "🎉 正解〜💖",
-            bread,
-            "🍓 +10 Berry"
-          );
+          showResult("🎉 正解〜💖", bread, "🍓 +10 Berry");
         }
-
       } else {
-
         showResult(
           "🤣 惜しい〜",
           "🍞",
           "正解は「" + word.japanese + "」だよ💕"
         );
-
       }
-
     };
 
     buttons.appendChild(button);
@@ -260,7 +248,7 @@ function playGacha() {
     showResult(
       "🍓 Berry不足〜",
       "🥺",
-      "30 Berry ためてから来てね💕"
+      "30 Berry ためてね💕"
     );
     return;
   }
@@ -304,12 +292,10 @@ function showResult(title, bread, message) {
 </div>
 `;
 
-  document
-    .getElementById("nextButton")
+  document.getElementById("nextButton")
     .addEventListener("click", showShop);
 
-  document
-    .getElementById("homeButton")
+  document.getElementById("homeButton")
     .addEventListener("click", showTitle);
 }
 
