@@ -1,5 +1,8 @@
 const app = document.getElementById("app");
 
+// 今日焼いたパン
+let bakedBreads = [];
+
 const galLines = [
   "え、今日も来たじゃ〜ん🤣💕",
   "ガチ助かるんだけど〜🩷",
@@ -18,6 +21,14 @@ const customers = [
   "🐼 パンダちゃん",
   "🐹 ハムちゃん",
   "🐶 わんちゃん"
+];
+
+const breads = [
+  "🥖",
+  "🍞",
+  "🥐",
+  "🥯",
+  "🥨"
 ];
 
 function randomItem(array) {
@@ -55,7 +66,6 @@ function showTitle() {
   document
     .getElementById("startButton")
     .addEventListener("click", showShop);
-
 }
 
 async function showShop() {
@@ -86,11 +96,28 @@ async function showShop() {
         「${randomItem(galLines)}」
       </div>
 
+      <h3>💖 今日焼いたパン 💖</h3>
+
+      <div
+        style="
+          font-size:40px;
+          min-height:60px;
+          margin-bottom:20px;
+        "
+      >
+        ${bakedBreads.join(" ")}
+      </div>
+
       <h2>
         ${randomItem(customers)}
       </h2>
 
-      <p style="font-size:28px;margin:25px 0;">
+      <p
+        style="
+          font-size:28px;
+          margin:25px 0;
+        "
+      >
         <b>${word.english}</b>, please 💕
       </p>
 
@@ -103,9 +130,11 @@ async function showShop() {
 
   choices.forEach(choice => {
 
-    const button = document.createElement("button");
+    const button =
+      document.createElement("button");
 
     button.textContent = choice;
+
     button.style.display = "block";
     button.style.margin = "12px auto";
     button.style.width = "240px";
@@ -114,11 +143,20 @@ async function showShop() {
 
       if (choice === word.japanese) {
 
-        alert("🎉 きゃーー💕 正解なんだけど〜✨");
+        const bread =
+          randomItem(breads);
+
+        bakedBreads.push(bread);
+
+        alert(
+          `🎉 ${bread} 焼けた〜💖`
+        );
 
       } else {
 
-        alert(`🤣 ちょ待って〜！正解は「${word.japanese}」だよ💦`);
+        alert(
+          `🤣 正解は「${word.japanese}」だよ💕`
+        );
 
       }
 
