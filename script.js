@@ -3,6 +3,9 @@ const app = document.getElementById("app");
 // 焼いたパンを保存
 let bakedBreads = [];
 
+// Berry
+let berry = 0;
+
 const galLines = [
   "え、今日も来たじゃ〜ん🤣💕",
   "ガチ助かるんだけど〜🩷",
@@ -96,6 +99,10 @@ async function showShop() {
 
   <h1>🥐 まぢパン。</h1>
 
+  <div class="mini">
+    🍓 Berry：${berry}
+  </div>
+
   <div class="gal-talk">
     「${randomItem(galLines)}」
   </div>
@@ -145,9 +152,11 @@ async function showShop() {
         bakedBreads.push(bread);
 
         if (isRare) {
-          alert("🤯💖 レアパンGET!!\n\n" + bread + "\n\n激アツ〜🔥");
+          berry += 50;
+          alert("🤯💖 レアパンGET!!\n\n" + bread + "\n\n🍓 +50 Berry");
         } else {
-          alert("🎉 " + bread + " が焼けた〜💖");
+          berry += 10;
+          alert("🎉 " + bread + " が焼けた〜💖\n\n🍓 +10 Berry");
         }
 
       } else {
