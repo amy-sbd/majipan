@@ -41,6 +41,15 @@ const rareBreads = [
   "🦄🥨"
 ];
 
+const gachaBreads = [
+  "🍓🥐",
+  "🍫🍞",
+  "🎀🥯",
+  "🌈🥨",
+  "💎🍩",
+  "👑🥐"
+];
+
 function randomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
@@ -113,6 +122,10 @@ function showTitle() {
     🩷 START 🩷
   </button>
 
+  <button id="gachaButton" style="margin-top:12px;background:#8f5cff;">
+    🎁 ガチャ 30 Berry
+  </button>
+
   <button id="resetButton" style="margin-top:12px;background:#999;">
     データリセット
   </button>
@@ -123,6 +136,10 @@ function showTitle() {
   document
     .getElementById("startButton")
     .addEventListener("click", showShop);
+
+  document
+    .getElementById("gachaButton")
+    .addEventListener("click", playGacha);
 
   document
     .getElementById("resetButton")
@@ -238,6 +255,30 @@ async function showShop() {
   });
 }
 
+function playGacha() {
+  if (berry < 30) {
+    showResult(
+      "🍓 Berry不足〜",
+      "🥺",
+      "30 Berry ためてから来てね💕"
+    );
+    return;
+  }
+
+  berry -= 30;
+
+  const bread = randomItem(gachaBreads);
+
+  bakedBreads.push(bread);
+  saveGame();
+
+  showResult(
+    "🎁 ガチャ結果",
+    bread,
+    "新しいパンGET〜💖"
+  );
+}
+
 function showResult(title, bread, message) {
   app.innerHTML = `
 <div class="shop-card">
@@ -256,12 +297,20 @@ function showResult(title, bread, message) {
     🩷 NEXT 🩷
   </button>
 
+  <button id="homeButton" style="margin-top:12px;background:#999;">
+    HOME
+  </button>
+
 </div>
 `;
 
   document
     .getElementById("nextButton")
     .addEventListener("click", showShop);
+
+  document
+    .getElementById("homeButton")
+    .addEventListener("click", showTitle);
 }
 
 loadGame();
