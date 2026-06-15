@@ -1,6 +1,6 @@
 const app = document.getElementById("app");
 
-const SAVE_KEY = "majipan_save_v5";
+const SAVE_KEY = "majipan_save_v8";
 
 let berry = 0;
 let todayCorrect = 0;
@@ -14,6 +14,28 @@ let setBerry = 0;
 
 let wordStats = {};
 let trainingMode = false;
+
+let avatarItems = {};
+let equippedItems = {};
+
+const avatarCatalog = [
+  { key: "ribbon", emoji: "🎀", name: "Ribbon", price: 50, shop: true, rarity: "N" },
+  { key: "glasses", emoji: "🕶", name: "Glasses", price: 80, shop: true, rarity: "N" },
+  { key: "lip", emoji: "💄", name: "Lip", price: 120, shop: true, rarity: "R" },
+  { key: "bag", emoji: "👜", name: "Bag", price: 200, shop: true, rarity: "R" },
+  { key: "tiara", emoji: "👑", name: "Tiara", price: 150, shop: true, rarity: "SR" },
+
+  { key: "catears", emoji: "🐱", name: "Cat Ears", price: 0, shop: false, rarity: "R" },
+  { key: "starpin", emoji: "⭐", name: "Star Pin", price: 0, shop: false, rarity: "R" },
+  { key: "wings", emoji: "🪽", name: "Angel Wings", price: 0, shop: false, rarity: "SR" },
+  { key: "aura", emoji: "🌈", name: "Rainbow Aura", price: 0, shop: false, rarity: "SR" },
+  { key: "devil", emoji: "😈", name: "Devil Mood", price: 0, shop: false, rarity: "SR" },
+  { key: "berrycrown", emoji: "🍓👑", name: "Berry Crown", price: 0, shop: false, rarity: "SSR" },
+  { key: "galaxy", emoji: "🌌", name: "Galaxy Aura", price: 0, shop: false, rarity: "SSR" },
+  { key: "queen", emoji: "💎👑", name: "Queen Set", price: 0, shop: false, rarity: "SSR" }
+];
+
+const GACHA_COST = 80;
 
 const galLines = [
   "え、今日も来たじゃ〜ん🤣💕",
@@ -38,13 +60,70 @@ function randomItem(array) {
 
 function addGalExp(amount) {
   galExp += amount;
-
   const needed = galLevel * 100;
 
   if (galExp >= needed) {
     galExp -= needed;
     galLevel++;
   }
+}
+
+function normalizeAvatarData() {
+  avatarCatalog.forEach((item) => {
+    if (avatarItems[item.key] === undefined) {
+      avatarItems[item.key] = false;
+    }
+
+    if (equippedItems[item.key] === undefined) {
+      equippedItems[item.key] = false;
+    }
+  });
+}
+
+function getRarityStyle(rarity) {
+  if (rarity === "SSR") {
+    return "background:linear-gradient(90deg,#8e2de2,#ffcc00);color:white;";
+  }
+
+  if (rarity === "SR") {
+    return "background:#8f5cff;color:white;";
+  }
+
+  if (rarity === "R") {
+    return "background:#ff77bb;color:white;";
+  }
+
+  return "background:#ddd;color:#333;";
+}
+
+function renderAvatar() {
+  let top = "";
+  let middle = "🙂";
+  let bottom = "";
+
+  if (equippedItems.galaxy) top += "🌌";
+  if (equippedItems.aura) top += "🌈";
+  if (equippedItems.queen) top += "💎👑";
+  if (equippedItems.berrycrown) top += "🍓👑";
+  if (equippedItems.tiara) top += "👑";
+  if (equippedItems.catears) top += "🐱";
+  if (equippedItems.ribbon) top += "🎀";
+  if (equippedItems.starpin) top += "⭐";
+
+  if (equippedItems.glasses) middle = "🕶🙂";
+  if (equippedItems.devil) middle = "😈";
+  if (equippedItems.lip) middle += "💄";
+  if (equippedItems.wings) middle = "🪽" + middle + "🪽";
+
+  if (equippedItems.bag) bottom += "👜";
+
+  return `
+<div style="font-size:42px;line-height:1.4;margin:18px 0;">
+${top}<br>
+${middle}<br>
+${bottom}
+</div>
+`;
 }
 
 function getWordStat(word) {
@@ -89,7 +168,10 @@ function chooseWord(words) {
 function loadGame() {
   const saved = localStorage.getItem(SAVE_KEY);
 
-  if (!saved) return;
+  if (!saved) {
+    normalizeAvatarData();
+    return;
+  }
 
   try {
     const data = JSON.parse(saved);
@@ -100,13 +182,20 @@ function loadGame() {
     galLevel = data.galLevel || 1;
     combo = data.combo || 0;
     wordStats = data.wordStats || {};
+    avatarItems = data.avatarItems || {};
+    equippedItems = data.equippedItems || {};
+
+    normalizeAvatarData();
 
   } catch {
+    normalizeAvatarData();
     console.log("save load error");
   }
 }
 
 function saveGame() {
+  normalizeAvatarData();
+
   localStorage.setItem(
     SAVE_KEY,
     JSON.stringify({
@@ -115,7 +204,9 @@ function saveGame() {
       galExp,
       galLevel,
       combo,
-      wordStats
+      wordStats,
+      avatarItems,
+      equippedItems
     })
   );
 }
@@ -136,6 +227,8 @@ function showTitle() {
 <div class="title-box">
 
 <h1>まぢパン。</h1>
+
+${renderAvatar()}
 
 <p class="sub">GAL WORD BATTLE 💅✨</p>
 
@@ -159,6 +252,14 @@ ${showStatusMini()}
 👑 卒業図鑑
 </button>
 
+<button id="shopButton" style="margin-top:12px;background:#00b894;">
+🛍️ SHOP
+</button>
+
+<button id="gachaButton" style="margin-top:12px;background:#e84393;">
+🎰 アバターガチャ ${GACHA_COST} Berry
+</button>
+
 </div>
 `;
 
@@ -180,6 +281,169 @@ ${showStatusMini()}
 
   document.getElementById("statusButton").onclick = showWordStatus;
   document.getElementById("graduateButton").onclick = showGraduationBook;
+  document.getElementById("shopButton").onclick = showAvatarShop;
+  document.getElementById("gachaButton").onclick = playAvatarGacha;
+}
+
+function showAvatarShop() {
+  let html = "";
+
+  avatarCatalog.forEach((item) => {
+    const owned = avatarItems[item.key];
+    const equipped = equippedItems[item.key];
+
+    html += `
+<div style="margin:15px 0;padding:12px;border:1px solid #ddd;border-radius:12px;">
+<div style="display:inline-block;padding:4px 10px;border-radius:999px;${getRarityStyle(item.rarity)}">
+${item.rarity}
+</div>
+<br><br>
+${item.emoji} ${item.name}<br>
+${item.shop ? "💰 " + item.price : "🎰 ガチャ限定"}<br><br>
+
+${
+  item.shop
+    ? `<button onclick="buyItem('${item.key}')">
+        ${owned ? "購入済み" : "買う"}
+      </button>`
+    : `<button disabled>
+        ${owned ? "入手済み" : "ガチャ限定"}
+      </button>`
+}
+
+${owned ? `
+<button onclick="toggleEquip('${item.key}')">
+${equipped ? "外す" : "装備"}
+</button>` : ""}
+</div>
+`;
+  });
+
+  app.innerHTML = `
+<div class="shop-card">
+
+<h1>🛍️ Avatar Shop</h1>
+
+${renderAvatar()}
+
+${showStatusMini()}
+
+${html}
+
+<button id="homeButton">HOME</button>
+
+</div>
+`;
+
+  document.getElementById("homeButton").onclick = showTitle;
+}
+
+window.buyItem = function(key) {
+  const item = avatarCatalog.find(i => i.key === key);
+
+  if (!item.shop) return;
+  if (avatarItems[key]) return;
+
+  if (berry < item.price) {
+    alert("Berry足りない🤣");
+    return;
+  }
+
+  berry -= item.price;
+  avatarItems[key] = true;
+
+  saveGame();
+  showAvatarShop();
+};
+
+window.toggleEquip = function(key) {
+  if (!avatarItems[key]) return;
+
+  equippedItems[key] = !equippedItems[key];
+
+  saveGame();
+  showAvatarShop();
+};
+
+function pickGachaItem() {
+  const notOwned = avatarCatalog.filter((item) => !avatarItems[item.key]);
+
+  if (notOwned.length === 0) {
+    return null;
+  }
+
+  const pool = [];
+
+  notOwned.forEach((item) => {
+    let weight = 1;
+
+    if (item.rarity === "N") weight = 45;
+    if (item.rarity === "R") weight = 30;
+    if (item.rarity === "SR") weight = 15;
+    if (item.rarity === "SSR") weight = 5;
+
+    for (let i = 0; i < weight; i++) {
+      pool.push(item);
+    }
+  });
+
+  return randomItem(pool);
+}
+
+function playAvatarGacha() {
+  if (berry < GACHA_COST) {
+    showResult(
+      "🍓 Berry不足〜",
+      GACHA_COST + " Berry ためてから来てね💖"
+    );
+    return;
+  }
+
+  const item = pickGachaItem();
+
+  if (!item) {
+    showResult(
+      "🎰 コンプリート!!",
+      "全部持ってるじゃん💖まぢ神✨"
+    );
+    return;
+  }
+
+  berry -= GACHA_COST;
+
+  avatarItems[item.key] = true;
+  equippedItems[item.key] = true;
+
+  saveGame();
+
+  app.innerHTML = `
+<div class="shop-card">
+
+<h1>🎰 ガチャ結果</h1>
+
+<div style="display:inline-block;padding:8px 18px;border-radius:999px;font-size:22px;${getRarityStyle(item.rarity)}">
+${item.rarity}
+</div>
+
+<div style="font-size:70px;margin:20px 0;">
+${item.emoji}
+</div>
+
+<div class="gal-talk">
+${item.name} GET💖<br>
+${item.rarity === "SSR" ? "え、SSRはまぢ神引き🤣👑" : "さっそく装備したよ✨"}
+</div>
+
+${renderAvatar()}
+
+<button id="homeButton">HOME</button>
+<button id="shopButton" style="margin-top:12px;background:#00b894;">SHOP</button>
+
+</div>
+`;
+
+  document.getElementById("homeButton").onclick = showTitle;
+  document.getElementById("shopButton").onclick = showAvatarShop;
 }
 
 async function showWordStatus() {
@@ -205,13 +469,9 @@ Stage：${stat.stage}<br>
 
   app.innerHTML = `
 <div class="shop-card">
-
 <h1>📊 単語ステータス</h1>
-
 ${html}
-
 <button id="homeButton">HOME</button>
-
 </div>
 `;
 
@@ -232,8 +492,7 @@ async function showGraduationBook() {
   if (graduatedWords.length === 0) {
     html = `
 <div class="gal-talk">
-まだ卒業単語はないよ💅<br>
-ボス戦クリアでここに並ぶ✨
+まだ卒業単語はないよ💅
 </div>
 `;
   } else {
@@ -243,8 +502,7 @@ async function showGraduationBook() {
       html += `
 <div style="margin:15px 0;padding:12px;border:2px solid gold;border-radius:14px;background:#fffbea;">
 👑 <b>${word.english}</b> / ${word.japanese}<br>
-ボスクリア：${stat.bossClear}回<br>
-まぢ習得済み💖
+ボスクリア：${stat.bossClear}回
 </div>
 `;
     });
@@ -252,17 +510,9 @@ async function showGraduationBook() {
 
   app.innerHTML = `
 <div class="shop-card">
-
 <h1>👑 卒業図鑑</h1>
-
-<div class="mini">
-卒業単語：${graduatedWords.length}
-</div>
-
 ${html}
-
 <button id="homeButton">HOME</button>
-
 </div>
 `;
 
@@ -281,25 +531,13 @@ function makeQuestion(words, word, stat) {
   if (stat.stage === 1) {
     questionText = `<b>${word.english}</b><br>この意味は？`;
     correctAnswer = word.japanese;
-
-    choices = [
-      word.japanese,
-      wrongWords[0].japanese,
-      wrongWords[1].japanese,
-      wrongWords[2].japanese
-    ];
+    choices = [word.japanese, wrongWords[0].japanese, wrongWords[1].japanese, wrongWords[2].japanese];
   }
 
   if (stat.stage === 2) {
     questionText = `<b>${word.japanese}</b><br>英語で？`;
     correctAnswer = word.english;
-
-    choices = [
-      word.english,
-      wrongWords[0].english,
-      wrongWords[1].english,
-      wrongWords[2].english
-    ];
+    choices = [word.english, wrongWords[0].english, wrongWords[1].english, wrongWords[2].english];
   }
 
   if (stat.stage === 3) {
@@ -320,8 +558,6 @@ async function showShop() {
     return;
   }
 
-  currentQuestion++;
-
   const response = await fetch("words.json");
   const words = await response.json();
 
@@ -336,27 +572,21 @@ async function showShop() {
     if (playWords.length === 0) {
       app.innerHTML = `
 <div class="shop-card">
-
 <h1>🔥 苦手特訓</h1>
-
-<div class="gal-talk">
-今は苦手単語ないじゃ〜ん💖<br>
-まぢ優秀✨
-</div>
-
+<div class="gal-talk">今は苦手単語ないじゃ〜ん💖</div>
 <button id="homeButton">HOME</button>
-
 </div>
 `;
-
       document.getElementById("homeButton").onclick = showTitle;
       return;
     }
   }
 
+  currentQuestion++;
+
   const word = chooseWord(playWords);
   const stat = getWordStat(word);
-  const question = makeQuestion(playWords, word, stat);
+  const question = makeQuestion(words, word, stat);
 
   const isBoss = stat.stage === 3;
 
@@ -395,8 +625,20 @@ ${question.questionText}
 
   if (stat.stage === 3) {
     answerArea.innerHTML = `
-<input id="spellInput" type="text" style="font-size:24px;padding:12px;border-radius:14px;text-align:center;">
-<button id="spellButton">CHECK</button>
+<input
+id="spellInput"
+type="text"
+style="
+width:260px;
+padding:18px;
+font-size:26px;
+border-radius:22px;
+border:3px solid gold;
+text-align:center;
+box-shadow:0 0 18px rgba(255,215,0,.7);
+"
+>
+<button id="spellButton">👑 CHECK</button>
 `;
 
     document.getElementById("spellButton").onclick = () => {
